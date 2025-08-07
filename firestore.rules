@@ -1,0 +1,12 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Development rules - more permissive for mock authentication
+    // TODO: Update to proper authentication rules when real Firebase Auth is implemented
+    
+    // Allow all operations for development
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
