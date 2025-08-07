@@ -217,7 +217,7 @@ const DashboardScreen = React.memo(function DashboardScreen() {
     }
     
     // INSTANT navigation - no delay
-    router.push('/(tabs)/(home)/add-customer');
+    router.push('/add-customer');
   };
 
   // 🚀 CUSTOMER DETAIL APPROACH: Manual refresh for pull-to-refresh
@@ -527,7 +527,7 @@ const DashboardScreen = React.memo(function DashboardScreen() {
             if (Platform.OS === 'android') {
               InteractionManager.runAfterInteractions(() => {
                 router.push({
-                  pathname: '/(tabs)/(home)/customer-detail',
+                  pathname: '/customer-detail',
                   params: {
                     customerName: person.name,
                     customerPhone: person.name,
@@ -537,7 +537,7 @@ const DashboardScreen = React.memo(function DashboardScreen() {
             } else {
               // iOS: Direct navigation
               router.push({
-                pathname: '/(tabs)/(home)/customer-detail',
+                pathname: '/customer-detail',
                 params: {
                   customerName: person.name,
                   customerPhone: person.name,

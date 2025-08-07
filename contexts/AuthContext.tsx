@@ -95,18 +95,37 @@ export const [AuthProvider, useAuth] = createContextHook((): AuthContextType => 
       }
       
       console.log('Setting user with name:', profileName);
-      setUser({
+      const userData = {
         id: firebaseUser.uid,
         phone: firebaseUser.phoneNumber || '',
         name: profileName
-      });
+      };
+      setUser(userData);
+      
+      // Store user data for persistence
+      try {
+        await AsyncStorage.setItem('user_data', JSON.stringify(userData));
+        console.log('User data stored for persistence');
+      } catch (storageError) {
+        console.warn('Failed to store user data:', storageError);
+      }
     } catch (error) {
       console.error('Error handling user profile:', error);
-      setUser({
+      const fallbackUserData = {
         id: firebaseUser.uid,
         phone: firebaseUser.phoneNumber || '',
         name: firebaseUser.displayName || firebaseUser.phoneNumber || 'User'
-      });
+      };
+      setUser(fallbackUserData);
+      
+      // Store fallback user data for persistence
+      try {
+        await AsyncStorage.setItem('user_data', JSON.stringify(fallbackUserData));
+        console.log('Fallback user data stored for persistence');
+      } catch (storageError) {
+        console.warn('Failed to store fallback user data:', storageError);
+      }
+      
       // Show name input modal on error
       setShowNameInput(true);
     }
@@ -123,7 +142,8 @@ export const [AuthProvider, useAuth] = createContextHook((): AuthContextType => 
       });
       
       // Update the local user state
-      setUser(prev => prev ? { ...prev, name: newName } : null);
+      const updatedUser = user ? { ...user, name: newName } : null;
+      setUser(updatedUser);
       
       // Update the firebaseUser displayName for immediate header update
       setFirebaseUser(prev => prev ? {
@@ -131,14 +151,79 @@ export const [AuthProvider, useAuth] = createContextHook((): AuthContextType => 
         displayName: newName
       } : null);
       
+      // Update stored user data with new name
+      if (updatedUser) {
+        try {
+          await AsyncStorage.setItem('user_data', JSON.stringify(updatedUser));
+          console.log('Updated user data stored for persistence');
+        } catch (storageError) {
+          console.warn('Failed to store updated user data:', storageError);
+        }
+      }
+      
       console.log('User name updated successfully:', newName);
     } catch (error) {
       console.error('Error updating user name:', error);
     }
-  }, [firebaseUser]);
+  }, [firebaseUser, user]);
 
   const loadAuthState = useCallback(async () => {
     try {
+      // First check for stored auth state for persistence
+      const storedAuthState = await AsyncStorage.getItem('authenticated_user');
+      const storedUserData = await AsyncStorage.getItem('user_data');
+      
+      if (storedAuthState && storedUserData) {
+        try {
+          const authData = JSON.parse(storedAuthState);
+          const userData = JSON.parse(storedUserData);
+          
+          console.log('Restored user from storage:', authData.uid);
+          
+          // Recreate the mock user object for consistency
+          const restoredUser = {
+            uid: authData.uid,
+            phoneNumber: authData.phoneNumber,
+            displayName: authData.displayName,
+            email: null,
+            photoURL: null,
+            emailVerified: false,
+            isAnonymous: false,
+            providerId: 'phone',
+            metadata: authData.metadata,
+            providerData: [],
+            refreshToken: 'mock_refresh_token',
+            tenantId: null,
+            delete: async () => {},
+            getIdToken: async () => 'mock_id_token',
+            getIdTokenResult: async () => ({
+              authTime: new Date().toISOString(),
+              expirationTime: new Date(Date.now() + 3600000).toISOString(),
+              issuedAtTime: new Date().toISOString(),
+              signInProvider: 'phone',
+              signInSecondFactor: null,
+              token: 'mock_id_token',
+              claims: {},
+            }),
+            reload: async () => {},
+            toJSON: () => ({}),
+          } as unknown as FirebaseUser;
+          
+          // Set the restored user data
+          setFirebaseUser(restoredUser);
+          setUser(userData);
+          
+          console.log('Authentication state restored successfully');
+          return;
+        } catch (parseError) {
+          console.error('Error parsing stored auth data:', parseError);
+          // Clear invalid stored data
+          await AsyncStorage.removeItem('authenticated_user');
+          await AsyncStorage.removeItem('user_data');
+        }
+      }
+      
+      // Fallback to Firebase current user (for real Firebase users)
       const currentUser = auth.currentUser;
       
       if (currentUser) {
@@ -147,12 +232,13 @@ export const [AuthProvider, useAuth] = createContextHook((): AuthContextType => 
         await handleUserProfile(currentUser);
       } else {
         // No user found, clear auth state
+        console.log('No authenticated user found');
         setUser(null);
         setFirebaseUser(null);
       }
     } catch (error) {
-      console.error('Network error loading auth state:', error);
-      // Clear auth state on network errors to prevent stale state
+      console.error('Error loading auth state:', error);
+      // Clear auth state on errors
       setUser(null);
       setFirebaseUser(null);
     }
@@ -445,6 +531,20 @@ export const [AuthProvider, useAuth] = createContextHook((): AuthContextType => 
       // Set the Firebase user in state
       setFirebaseUser(mockUser);
       
+      // Store authentication state for persistence
+      try {
+        const authStateToStore = {
+          uid: mockUser.uid,
+          phoneNumber: mockUser.phoneNumber,
+          displayName: mockUser.displayName,
+          metadata: mockUser.metadata
+        };
+        await AsyncStorage.setItem('authenticated_user', JSON.stringify(authStateToStore));
+        console.log('Authentication state stored for persistence');
+      } catch (storageError) {
+        console.warn('Failed to store auth state:', storageError);
+      }
+      
       // Preload user data for faster dashboard loading
       console.log('🚀 Starting data preload during OTP verification...');
       
@@ -596,9 +696,13 @@ export const [AuthProvider, useAuth] = createContextHook((): AuthContextType => 
         setFirebaseUser(null);
         setIsLoading(false);
         
-        // Clear AsyncStorage
+        // Clear authentication-related AsyncStorage items
+        await AsyncStorage.removeItem('authenticated_user');
+        await AsyncStorage.removeItem('user_data');
+        
+        // Also clear any other app-related storage
         await AsyncStorage.clear();
-        console.log('Local storage cleared successfully');
+        console.log('All storage cleared successfully');
         
         // Clear any cached data
         if (typeof window !== 'undefined' && window.localStorage) {
@@ -626,6 +730,15 @@ export const [AuthProvider, useAuth] = createContextHook((): AuthContextType => 
       setUser(null);
       setFirebaseUser(null);
       setIsLoading(false);
+      
+      // Clear stored authentication data
+      try {
+        await AsyncStorage.removeItem('authenticated_user');
+        await AsyncStorage.removeItem('user_data');
+        console.log('Stored authentication data cleared');
+      } catch (clearError) {
+        console.warn('Error clearing stored auth data:', clearError);
+      }
       
       // CRITICAL: Reset navigation stack completely to prevent back navigation to authenticated pages
       // Use router.replace with dismissAll to clear the entire stack

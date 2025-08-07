@@ -19,7 +19,7 @@ import { BS_MONTHS } from '@/constants/calendar';
 import { auth, firestoreHelpers } from '@/lib/firebase';
 import { BSDate } from '@/utils/date-utils';
 
-export default function AddReceiveEntryScreen() {
+export default function EditReceiveEntryScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const { updateTransactionEntry, deleteTransactionEntry, setFirebaseUser, getAllTransactionEntries } = useTransactionEntries();
@@ -36,7 +36,7 @@ export default function AddReceiveEntryScreen() {
   const editDescription = params.editDescription as string || '';
   const editDate = params.editDate as string || '';
   
-  const isEditMode = !!editTransactionId;
+  const isEditMode = true; // This is always edit mode for this page
 
   interface EntryItem {
     amount: string;
@@ -93,10 +93,8 @@ export default function AddReceiveEntryScreen() {
   }, [user, setFirebaseUser]);
   
   useEffect(() => {
-    console.log(isEditMode ? 'Edit Receive Entry screen loaded' : 'Add Receive Entry screen loaded', 'for customer:', customerName);
-    if (isEditMode) {
-      console.log('Edit mode data:', { editTransactionId, editAmount, editDescription, editDate });
-    }
+    console.log('Edit Receive Entry screen loaded for customer:', customerName);
+    console.log('Edit mode data:', { editTransactionId, editAmount, editDescription, editDate });
   }, [customerName, isEditMode, editTransactionId, editAmount, editDescription, editDate]);
   
   const validateForm = (): boolean => {
@@ -163,7 +161,7 @@ export default function AddReceiveEntryScreen() {
         // Return to customer statement page if we came from there
         if (customerName) {
           router.replace({
-            pathname: '/(tabs)/(home)/customer-detail',
+            pathname: '/customer-detail',
             params: { customerName }
           });
         } else {
@@ -264,7 +262,7 @@ export default function AddReceiveEntryScreen() {
         // Return to customer statement page if we came from there
         if (customerName) {
           router.replace({
-            pathname: '/(tabs)/(home)/customer-detail',
+            pathname: '/customer-detail',
             params: { customerName }
           });
         } else {
@@ -654,6 +652,47 @@ export default function AddReceiveEntryScreen() {
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      {/* Action Buttons - Replace Tab Bar */}
+      <View style={[styles.actionButtonsContainer, { 
+        paddingBottom: Platform.OS === 'android' ? Math.max(insets.bottom + 5, 15) : Math.max(insets.bottom + 10, 25)
+      }]}>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.saveButton]}
+          onPress={handleSaveEntry}
+          activeOpacity={0.8}
+          disabled={isLoading}
+        >
+          <LinearGradient
+            colors={['#10B981', '#059669']}
+            style={styles.actionButtonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Save size={20} color="white" strokeWidth={2.5} />
+            <Text style={styles.actionButtonText}>{isEditMode ? t('update') : t('save')}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {isEditMode && (
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={handleDeleteEntry}
+            activeOpacity={0.8}
+            disabled={isLoading}
+          >
+            <LinearGradient
+              colors={['#EF4444', '#DC2626']}
+              style={styles.actionButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Trash2 size={20} color="white" strokeWidth={2.5} />
+              <Text style={styles.actionButtonText}>{t('delete')}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -954,4 +993,55 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     letterSpacing: 0.1,
   },
+
+  // Action Buttons Styles - Replace Tab Bar
+  actionButtonsContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF', // White background like home page
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)', // Subtle border for white background
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 8, // Add elevation for Android
+  },
+  actionButton: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  actionButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  actionButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: 'white',
+    letterSpacing: 0.5,
+  },
+  saveButton: {
+    // Additional styles for Save button if needed
+  },
+  deleteButton: {
+    // Additional styles for Delete button if needed
+  },
+
 });

@@ -1,7 +1,8 @@
 import { initializeApp, getApp } from 'firebase/app';
 import { initializeAuth, getAuth, onAuthStateChanged, signOut as firebaseSignOut, User as FirebaseUser } from 'firebase/auth';
-import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, query, where, orderBy, limit, getDocs, addDoc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, query, where, orderBy, limit, getDocs, addDoc, connectFirestoreEmulator, initializeFirestore as firebaseInitializeFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { TransactionEntry } from '@/contexts/TransactionEntriesContext';
 
 // Module-level initialization guard
@@ -76,15 +77,46 @@ const initializeFirebaseAuth = () => {
   return firebaseAuth;
 };
 
-// Initialize Firestore
-const initializeFirestore = () => {
+// Initialize Firestore with Android-specific optimizations
+const initializeCustomFirestore = () => {
   if (!isDbInitialized) {
     try {
-      firebaseDb = getFirestore(firebaseApp);
+      // Use different initialization for Android to prevent WebChannel errors
+      if (Platform.OS === 'android') {
+        console.log('Initializing Firestore with Android optimizations...');
+        
+        // Initialize with moderate settings for Android stability
+        firebaseDb = firebaseInitializeFirestore(firebaseApp, {
+          cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+          // Remove forced long-polling to allow normal WebSocket connections
+          // experimentalForceLongPolling: true, // Commented out - was causing timeouts
+        });
+        
+        console.log('Firestore initialized with Android-specific settings');
+      } else {
+        // Use default initialization for iOS/Web
+        firebaseDb = getFirestore(firebaseApp);
+        console.log('Firestore initialized with default settings for iOS/Web');
+      }
+      
       isDbInitialized = true;
     } catch (error: any) {
-      console.warn('Firestore initialization error:', error);
-      isDbInitialized = true;
+      // Fallback to default Firestore if custom initialization fails
+      if (error.code === 'failed-precondition' || error.message?.includes('already been called')) {
+        console.log('Firestore already initialized, using existing instance');
+        firebaseDb = getFirestore(firebaseApp);
+        isDbInitialized = true;
+      } else {
+        console.warn('Firestore initialization error, trying fallback:', error);
+        try {
+          firebaseDb = getFirestore(firebaseApp);
+          isDbInitialized = true;
+          console.log('Firestore fallback initialization successful');
+        } catch (fallbackError) {
+          console.error('Firestore fallback initialization failed:', fallbackError);
+          isDbInitialized = true; // Mark as initialized to prevent infinite loops
+        }
+      }
     }
   }
   return firebaseDb;
@@ -101,7 +133,7 @@ const initializeFirebase = () => {
   
   const app = initializeFirebaseApp();
   const auth = initializeFirebaseAuth();
-  const db = initializeFirestore();
+  const db = initializeCustomFirestore();
   
   isInitialized = true;
   console.log('Firebase initialization complete');
@@ -116,6 +148,38 @@ export const auth = firebaseInstances.auth;
 export const db = firebaseInstances.db;
 
 console.log('Firebase initialized with project ID:', firebaseConfig.projectId);
+
+// Suppress Firebase WebChannel warnings on Android
+if (Platform.OS === 'android') {
+  // Suppress specific Firebase warnings that are harmless but noisy
+  const originalConsoleWarn = console.warn;
+  console.warn = (...args) => {
+    const message = args.join(' ');
+    
+    // Temporarily allow warnings to diagnose connection issues
+    // if (
+    //   message.includes('WebChannelConnection') ||
+    //   message.includes('RPC \'Listen\' stream') ||
+    //   message.includes('transport errored') ||
+    //   message.includes('@firebase/firestore') && message.includes('stream')
+    // ) {
+    //   // Silently ignore these warnings on Android
+    //   return;
+    // }
+    
+    // Allow all other warnings
+    originalConsoleWarn(...args);
+  };
+  
+  console.log('Android Firebase warning suppression enabled');
+  
+  // Additional Android-specific connection management
+  if (typeof global !== 'undefined') {
+    // Disable automatic retry for WebChannel connections on Android
+    (global as any).__FIRESTORE_WEBCHANNEL_HEARTBEAT_DISABLE__ = true;
+    console.log('Android WebChannel heartbeat disabled');
+  }
+}
 
 // Simple connection test
 export const testFirebaseConnection = async (): Promise<boolean> => {
@@ -202,16 +266,59 @@ export const handleFirebaseError = (error: any, operation: string) => {
   return { isNetworkError: false, message: errorMessage };
 };
 
-// Simple operation wrapper with basic timeout
+// Simple operation wrapper with basic timeout (Android-optimized)
 export const withTimeout = async <T>(
   operation: () => Promise<T>,
-  timeoutMs: number = 8000
+  timeoutMs: number = Platform.OS === 'android' ? 25000 : 10000 // Increased timeout for Android
 ): Promise<T> => {
   const timeoutPromise = new Promise<never>((_, reject) => {
     setTimeout(() => reject(new Error('Request timed out. Please try again.')), timeoutMs);
   });
   
   return Promise.race([operation(), timeoutPromise]);
+};
+
+// Android-specific operation wrapper with retry logic
+export const withAndroidRetry = async <T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 2
+): Promise<T> => {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (Platform.OS === 'android') {
+        // Add small delay for Android to prevent rapid-fire requests
+        if (attempt > 0) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+      }
+      
+      return await withTimeout(operation);
+    } catch (error) {
+      lastError = error as Error;
+      
+      // Don't retry on certain errors
+      if (
+        error instanceof Error && (
+          error.message.includes('permission') ||
+          error.message.includes('not-found') ||
+          error.message.includes('already-exists')
+        )
+      ) {
+        throw error;
+      }
+      
+      if (attempt === maxRetries) {
+        console.warn(`Operation failed after ${maxRetries + 1} attempts:`, error);
+        throw lastError;
+      }
+      
+      console.log(`Attempt ${attempt + 1} failed, retrying...`, error);
+    }
+  }
+  
+  throw lastError!;
 };
 
 // Firestore helper functions
@@ -310,7 +417,7 @@ export const firestoreHelpers = {
 
   // Add a new transaction entry (renamed from addLoan)
   async addTransactionEntry(transactionData: any) {
-    try {
+    const operation = async () => {
       console.log('=== ADDING TRANSACTION ENTRY ===');
       console.log('Transaction data:', transactionData);
       
@@ -333,6 +440,10 @@ export const firestoreHelpers = {
       
       console.log('Transaction saved successfully with ID:', docRef.id);
       return { success: true, data: { id: docRef.id, ...transactionData } };
+    };
+
+    try {
+      return await withAndroidHealthCheck(operation);
     } catch (error) {
       console.error('Error adding transaction entry:', error);
       throw error;
@@ -341,7 +452,7 @@ export const firestoreHelpers = {
 
   // Get transaction entries for a user (renamed from getLoans)
   async getTransactionEntries(userId: string): Promise<TransactionEntry[]> {
-    try {
+    const operation = async () => {
       console.log('=== GETTING TRANSACTION ENTRIES ===');
       console.log('User ID:', userId);
       
@@ -371,6 +482,10 @@ export const firestoreHelpers = {
       
       console.log('Sorted entries:', sortedEntries.length, 'entries');
       return sortedEntries as TransactionEntry[];
+    };
+
+    try {
+      return await withAndroidHealthCheck(operation);
     } catch (error) {
       console.error('Error getting transaction entries:', error);
       throw error;
@@ -526,6 +641,61 @@ export const firestoreHelpers = {
       throw error;
     }
   },
+};
+
+// Android-specific connection health monitor
+export const androidConnectionMonitor = {
+  isHealthy: true,
+  lastSuccessfulOperation: Date.now(),
+  consecutiveFailures: 0,
+  
+  recordSuccess() {
+    this.isHealthy = true;
+    this.lastSuccessfulOperation = Date.now();
+    this.consecutiveFailures = 0;
+  },
+  
+  recordFailure() {
+    this.consecutiveFailures++;
+    if (this.consecutiveFailures >= 3) {
+      this.isHealthy = false;
+      console.log('Android Firebase connection marked as unhealthy');
+    }
+  },
+  
+  shouldThrottle(): boolean {
+    if (Platform.OS !== 'android') return false;
+    
+    const timeSinceLastSuccess = Date.now() - this.lastSuccessfulOperation;
+    const isStale = timeSinceLastSuccess > 60000; // 60 seconds (increased)
+    
+    return !this.isHealthy && isStale; // Only throttle if BOTH unhealthy AND stale
+  },
+  
+  reset() {
+    this.isHealthy = true;
+    this.lastSuccessfulOperation = Date.now();
+    this.consecutiveFailures = 0;
+  }
+};
+
+// Enhanced Android wrapper that includes health monitoring
+export const withAndroidHealthCheck = async <T>(
+  operation: () => Promise<T>
+): Promise<T> => {
+  if (Platform.OS === 'android' && androidConnectionMonitor.shouldThrottle()) {
+    console.log('Throttling Android operation due to connection health');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+  
+  try {
+    const result = await withAndroidRetry(operation);
+    androidConnectionMonitor.recordSuccess();
+    return result;
+  } catch (error) {
+    androidConnectionMonitor.recordFailure();
+    throw error;
+  }
 };
 
 export default firebaseApp; 

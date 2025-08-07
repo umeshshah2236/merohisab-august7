@@ -123,14 +123,14 @@ export default React.memo(function ResultsScreen() {
         InteractionManager.runAfterInteractions(() => {
           router.dismissAll();
           router.push({
-            pathname: '/(tabs)/(home)/customer-detail',
+            pathname: '/customer-detail',
             params: { customerName }
           });
         });
       } else {
         // For iOS: Simple navigation works fine
         router.push({
-          pathname: '/(tabs)/(home)/customer-detail',
+          pathname: '/customer-detail',
           params: { customerName }
         });
       }

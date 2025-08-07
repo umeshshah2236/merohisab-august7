@@ -160,7 +160,7 @@ export default React.memo(function CalculatorScreen() {
     
     // Navigate to results screen with calculation data
     router.push({
-      pathname: '/(tabs)/(home)/calculator/results',
+      pathname: '/calculator/results',
       params: {
         principal: result.principal.toString(),
         totalInterest: result.totalInterest.toString(),

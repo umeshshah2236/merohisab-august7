@@ -81,10 +81,28 @@ export default function HomeScreen() {
   const handleFeaturePress = (route: string) => {
     // INSTANT haptic feedback for maximum responsiveness
     if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     // Remove delay for instant navigation
     router.push(route as any);
+  };
+
+  const handleCalculatorPress = () => {
+    // INSTANT haptic feedback for maximum responsiveness
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    // Remove delay for instant navigation
+    router.push('/calculator');
+  };
+
+  const handleKarobarPress = () => {
+    // INSTANT haptic feedback for maximum responsiveness
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    // Remove delay for instant navigation
+    router.push('/karobar');
   };
 
   const handleTrackLoansPress = () => {
@@ -232,7 +250,7 @@ export default function HomeScreen() {
               paddingHorizontal: getResponsivePadding(20),
               paddingVertical: getResponsivePadding(16),
             }]}
-            onPress={() => handleFeaturePress('/(tabs)/(home)/calculator')}
+            onPress={handleCalculatorPress}
             activeOpacity={0.8}
           >
             <View style={[styles.iconContainer, { 
@@ -273,7 +291,7 @@ export default function HomeScreen() {
               paddingHorizontal: getResponsivePadding(20),
               paddingVertical: getResponsivePadding(16),
             }]}
-            onPress={() => handleFeaturePress('/(tabs)/(home)/karobar')}
+            onPress={handleKarobarPress}
             activeOpacity={0.8}
           >
             <View style={[styles.iconContainer, { 

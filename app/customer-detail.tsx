@@ -872,7 +872,7 @@ export default React.memo(function CustomerDetailScreen() {
     // Navigate to Add Receive Entry screen
     console.log('TO RECEIVE pressed for:', customerName, 'with ID:', customerToReceive.id);
     router.push({
-      pathname: '/(tabs)/(home)/add-receive-entry',
+      pathname: '/add-receive-entry',
       params: {
         customerName,
         customerPhone,
@@ -896,7 +896,7 @@ export default React.memo(function CustomerDetailScreen() {
     // Navigate to Add Give Entry screen
     console.log('TO GIVE pressed for:', customerName, 'with ID:', customerToGive.id);
     router.push({
-      pathname: '/(tabs)/(home)/add-give-entry',
+      pathname: '/add-give-entry',
       params: {
         customerName,
         customerPhone,
@@ -932,12 +932,12 @@ export default React.memo(function CustomerDetailScreen() {
       
       if (entry.type === 'received') {
         router.push({
-          pathname: '/(tabs)/(home)/edit-receive-entry',
+          pathname: '/edit-receive-entry',
           params: editParams
         });
       } else {
         router.push({
-          pathname: '/(tabs)/(home)/edit-give-entry',
+          pathname: '/edit-give-entry',
           params: editParams
         });
       }
@@ -1029,7 +1029,7 @@ export default React.memo(function CustomerDetailScreen() {
     console.log('Navigation params:', navigationParams);
     
     router.push({
-      pathname: '/(tabs)/(home)/customer-form',
+      pathname: '/customer-form',
       params: navigationParams
     });
   };
@@ -1734,6 +1734,53 @@ export default React.memo(function CustomerDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Action Buttons - Replace Tab Bar */}
+      <View style={[styles.actionButtonsContainer, { 
+        paddingBottom: Platform.OS === 'android' ? Math.max(insets.bottom + 5, 15) : Math.max(insets.bottom + 10, 25)
+      }]}>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.youGotButton]}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+            handleToReceive();
+          }}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#10B981', '#059669']}
+            style={styles.actionButtonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <TrendingUp size={20} color="white" strokeWidth={2.5} />
+            <Text style={styles.actionButtonText}>{t('youGot')}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.youGaveButton]}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+            handleToGive();
+          }}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#EF4444', '#DC2626']}
+            style={styles.actionButtonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <TrendingDown size={20} color="white" strokeWidth={2.5} />
+            <Text style={styles.actionButtonText}>{t('youGave')}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 });
@@ -2503,6 +2550,56 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: 'white',
+  },
+
+  // Action Buttons Styles - Replace Tab Bar
+  actionButtonsContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF', // White background like home page
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)', // Subtle border for white background
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 8, // Add elevation for Android
+  },
+  actionButton: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  actionButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  actionButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: 'white',
+    letterSpacing: 0.5,
+  },
+  youGotButton: {
+    // Additional styles for You Got button if needed
+  },
+  youGaveButton: {
+    // Additional styles for You Gave button if needed
   },
 
 });

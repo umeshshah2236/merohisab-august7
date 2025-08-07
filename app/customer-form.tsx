@@ -147,7 +147,7 @@ export default function CustomerFormScreen() {
         
         // Navigate back to the statement page
         router.replace({
-          pathname: '/(tabs)/(home)/customer-detail',
+          pathname: '/customer-detail',
           params: { customerName: customerName.trim(), customerPhone: formattedPhone || '' }
         });
       } else {
@@ -168,7 +168,7 @@ export default function CustomerFormScreen() {
 
         // Navigate to customer detail page after successful save
         router.replace({
-          pathname: '/(tabs)/(home)/customer-detail',
+          pathname: '/customer-detail',
           params: {
             customerName: customerName.trim(),
             customerPhone: formattedPhone || ''

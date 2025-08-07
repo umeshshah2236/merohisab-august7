@@ -33,19 +33,7 @@ export default React.memo(function TabLayout() {
     borderColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.5)'
   }), [isDark]);
   
-  // Hide tab bar on specific pages
-  const shouldHideTabBar = React.useMemo(() => {
-    // Check if pathname contains any of these route segments
-    return pathname.includes('/add-receive-entry') ||
-           pathname.includes('/add-give-entry') ||
-           pathname.includes('/edit-receive-entry') ||
-           pathname.includes('/edit-give-entry') ||
-           pathname.includes('/add-customer') ||
-           pathname.includes('/customer-form') ||
-           pathname.includes('/customer-detail') ||
-           pathname.includes('/calculator') ||  // This covers both /calculator and /calculator/results
-           pathname.includes('/karobar');       // This covers both /karobar and /karobar/results
-  }, [pathname]);
+  // No more tab hiding logic needed - only Home and Settings remain in tabs
 
   // Detect phones without built-in navigation buttons
   const hasNavigationButtons = React.useMemo(() => {
@@ -104,7 +92,6 @@ export default React.memo(function TabLayout() {
     const screenWidth = Dimensions.get('window').width;
     
     const CustomTabBar = () => {
-      if (shouldHideTabBar) return null;
 
   return (
         <View style={{
@@ -311,7 +298,7 @@ export default React.memo(function TabLayout() {
         tabBarInactiveBackgroundColor: 'transparent',
         tabBarPressColor: Platform.OS === 'android' ? 'transparent' : undefined, // Remove touch feedback on Android
         tabBarPressOpacity: Platform.OS === 'android' ? 0 : undefined, // Remove touch feedback on Android
-        tabBarStyle: shouldHideTabBar ? { display: 'none' } : {
+        tabBarStyle: {
           backgroundColor: '#3B82F6', // Blue background for normal tab bar
           paddingBottom: Platform.OS === 'android' ? -5 : Math.max(insets.bottom - 48, 0),
           paddingTop: Platform.OS === 'ios' ? 8 : 0, // Reduced top padding for iOS

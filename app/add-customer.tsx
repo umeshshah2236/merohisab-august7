@@ -274,7 +274,7 @@ export default function AddCustomerScreen() {
 
     // Navigate to customer form with pre-filled data
     router.push({
-      pathname: '/(tabs)/(home)/customer-form',
+      pathname: '/customer-form',
       params: {
         customerName: contact.name,
         customerPhone: formattedPhone,
@@ -289,7 +289,7 @@ export default function AddCustomerScreen() {
     const name = searchQuery.trim();
     if (name) {
       router.push({
-        pathname: '/(tabs)/(home)/customer-form',
+        pathname: '/customer-form',
         params: {
           customerName: name,
         }

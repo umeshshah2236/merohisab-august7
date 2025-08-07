@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Alert, SafeAreaView, KeyboardAvoidingView, InteractionManager } from 'react-native';
 import TextInputWithDoneBar from '@/components/TextInputWithDoneBar';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Save, TrendingUp, Trash2, Plus, X } from 'lucide-react-native';
+import { ArrowLeft, Save, TrendingDown, Trash2, Plus, X } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -19,7 +19,7 @@ import { BS_MONTHS } from '@/constants/calendar';
 import { auth, firestoreHelpers } from '@/lib/firebase';
 import { BSDate } from '@/utils/date-utils';
 
-export default function AddGiveEntryScreen() {
+export default function EditReceiveEntryScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const { updateTransactionEntry, deleteTransactionEntry, setFirebaseUser, getAllTransactionEntries } = useTransactionEntries();
@@ -36,7 +36,7 @@ export default function AddGiveEntryScreen() {
   const editDescription = params.editDescription as string || '';
   const editDate = params.editDate as string || '';
   
-  const isEditMode = !!editTransactionId;
+  const isEditMode = true; // This is always edit mode for this page
 
   interface EntryItem {
     amount: string;
@@ -93,10 +93,8 @@ export default function AddGiveEntryScreen() {
   }, [user, setFirebaseUser]);
   
   useEffect(() => {
-    console.log(isEditMode ? 'Edit Give Entry screen loaded' : 'Add Give Entry screen loaded', 'for customer:', customerName);
-    if (isEditMode) {
-      console.log('Edit mode data:', { editTransactionId, editAmount, editDescription, editDate });
-    }
+    console.log('Edit Receive Entry screen loaded for customer:', customerName);
+    console.log('Edit mode data:', { editTransactionId, editAmount, editDescription, editDate });
   }, [customerName, isEditMode, editTransactionId, editAmount, editDescription, editDate]);
   
   const validateForm = (): boolean => {
@@ -151,11 +149,11 @@ export default function AddGiveEntryScreen() {
         await updateTransactionEntry(
           editTransactionId,
           parseFloat(firstEntry.amount),
-          'given',
+          'received',
           firstEntry.description || undefined
         );
         
-        console.log('Give entry updated successfully');
+        console.log('Receive entry updated successfully');
         // Set transaction activity flag for dashboard smart refresh
         (globalThis as any).__lastTransactionActivity = Date.now();
         // CRITICAL FIX: Invalidate customer cache since transaction was modified
@@ -163,7 +161,7 @@ export default function AddGiveEntryScreen() {
         // Return to customer statement page if we came from there
         if (customerName) {
           router.replace({
-            pathname: '/(tabs)/(home)/customer-detail',
+            pathname: '/customer-detail',
             params: { customerName }
           });
         } else {
@@ -194,7 +192,7 @@ export default function AddGiveEntryScreen() {
               const newCustomer = await addCustomer({
                 name: customerName.trim(),
                 phone: customerPhone || null,
-                customer_type: 'customer' as 'customer' | 'supplier'
+                customer_type: 'supplier' as 'customer' | 'supplier' // Received transactions typically from suppliers
               });
               actualCustomerId = newCustomer.data?.id || '';
               console.log('Created new customer with ID:', actualCustomerId);
@@ -214,7 +212,7 @@ export default function AddGiveEntryScreen() {
             customer_id: actualCustomerId, // Use the ensured customer ID
             customer_name: customerName,
             amount: parseFloat(entry.amount),
-            transaction_type: 'given' as const,
+            transaction_type: 'received' as const,
             description: entry.description || null,
             transaction_date: bsDateString,
             balance_after: 0, // Will be calculated by the helper function
@@ -224,13 +222,13 @@ export default function AddGiveEntryScreen() {
             const result = await firestoreHelpers.addTransactionEntry(transactionData);
             console.log('Transaction added successfully:', result.data);
           } catch (error) {
-            console.error('Error saving give entry:', error);
+            console.error('Error saving receive entry:', error);
             Alert.alert(t('error'), t('failedToSaveEntry'));
             return;
           }
         }
         
-        console.log('Give entry saved successfully');
+        console.log('Receive entry saved successfully');
         // Set transaction activity flag for dashboard smart refresh
         (globalThis as any).__lastTransactionActivity = Date.now();
         // CRITICAL FIX: Invalidate customer cache since transaction was modified
@@ -264,7 +262,7 @@ export default function AddGiveEntryScreen() {
         // Return to customer statement page if we came from there
         if (customerName) {
           router.replace({
-            pathname: '/(tabs)/(home)/customer-detail',
+            pathname: '/customer-detail',
             params: { customerName }
           });
         } else {
@@ -273,7 +271,7 @@ export default function AddGiveEntryScreen() {
       }
       
     } catch (error) {
-      console.error('Error saving give entry:', error);
+      console.error('Error saving receive entry:', error);
       Alert.alert(t('error'), t('failedToSaveEntry'));
     } finally {
       setIsLoading(false);
@@ -430,9 +428,9 @@ export default function AddGiveEntryScreen() {
         paddingTop: Platform.OS === 'ios' ? insets.top + 20 : insets.top + 40, // Increased padding for Android camera area
         marginTop: Platform.OS === 'android' ? -insets.top : 0, // Negative margin to extend behind status bar on Android
       }]}>
-        {/* Red Gradient Background */}
+        {/* Green Gradient Background */}
         <LinearGradient
-          colors={['#DC2626', '#B91C1C']}
+          colors={['#059669', '#047857']}
           style={styles.modernHeaderBackground}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -463,11 +461,11 @@ export default function AddGiveEntryScreen() {
               delayPressIn={0}
               delayPressOut={0}
             >
-              <ArrowLeft size={24} color="#DC2626" />
+              <ArrowLeft size={24} color="#059669" />
             </TouchableOpacity>
             <View style={styles.headerTextContainer}>
-              <Text style={styles.modernHeaderTitle}>{isEditMode ? t('editGiveEntry') : t('addGiveEntry')}</Text>
-              <Text style={styles.modernHeaderSubtitle}>{isEditMode ? `${t('editAmountToGive')} ${customerName}` : `${t('recordAmountToGive')} ${customerName}`}</Text>
+              <Text style={styles.modernHeaderTitle}>{isEditMode ? t('editReceiveEntry') : t('addReceiveEntry')}</Text>
+              <Text style={styles.modernHeaderSubtitle}>{isEditMode ? `${t('editAmountToReceive')} ${customerName}` : `${t('recordAmountToReceive')} ${customerName}`}</Text>
               <Text style={styles.nepaliDateText}>
                 {(() => {
                   const monthName = BS_MONTHS[selectedDate.month - 1];
@@ -507,7 +505,7 @@ export default function AddGiveEntryScreen() {
                         onPress={() => removeEntry(entry.id)}
                         style={styles.removeEntryButton}
                       >
-                        <X size={20} color="#DC2626" />
+                        <X size={20} color="#059669" />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -517,7 +515,7 @@ export default function AddGiveEntryScreen() {
                     <AmountInput
                       value={entry.amount}
                       onChangeText={(text) => handleEntryChange(entry.id, 'amount', text)}
-                      label={t('amountToGive')}
+                      label={t('amountToReceive')}
                       placeholder="0.00"
                       error={errors.entries?.[entry.id]?.amount}
                     />
@@ -548,20 +546,6 @@ export default function AddGiveEntryScreen() {
                       onChangeText={(text) => handleEntryChange(entry.id, 'description', text)}
                       placeholder={t('enterItemDetails')}
                       placeholderTextColor={theme.colors.textSecondary || '#94A3B8'}
-                      // Improved touch sensitivity
-                      editable={true}
-                      contextMenuHidden={false}
-                      showSoftInputOnFocus={true}
-                      spellCheck={false}
-                      autoComplete="off"
-                      textContentType="none"
-                      // Enhanced touch response
-                      onFocus={() => {
-                        // Ensure immediate focus response
-                      }}
-                      onPressIn={() => {
-                        // Immediate response to touch
-                      }}
                     />
                     {errors.entries?.[entry.id]?.description ? (
                       <Text style={[styles.modernErrorText, { color: theme.colors.error }]}>
@@ -601,8 +585,8 @@ export default function AddGiveEntryScreen() {
                   onPress={addNewEntry}
                   style={styles.addEntryButton}
                 >
-                  <Plus size={20} color="#DC2626" />
-                  <Text style={[styles.addEntryText, { color: '#DC2626' }]}>{t('addAnotherEntry')}</Text>
+                  <Plus size={20} color="#059669" />
+                  <Text style={[styles.addEntryText, { color: '#059669' }]}>{t('addAnotherEntry')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -618,26 +602,16 @@ export default function AddGiveEntryScreen() {
               style={[
                 styles.modernSaveButton,
                 {
-                  backgroundColor: '#DC2626',
+                  backgroundColor: '#059669',
                   opacity: isLoading ? 0.7 : 1
                 }
               ]}
-              onPress={() => {
-                // INSTANT haptic feedback for maximum responsiveness
-                if (Platform.OS !== 'web') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }
-                handleSaveEntry();
-              }}
+              onPress={handleSaveEntry}
               disabled={isLoading}
-              activeOpacity={0.2}
-              hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-              pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }}
-              delayPressIn={0}
-              delayPressOut={0}
+              activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['#DC2626', '#B91C1C']}
+                colors={['#059669', '#047857']}
                 style={styles.saveButtonGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
@@ -658,19 +632,9 @@ export default function AddGiveEntryScreen() {
                     opacity: isLoading ? 0.7 : 1
                   }
                 ]}
-                onPress={() => {
-                  // INSTANT haptic feedback for maximum responsiveness
-                  if (Platform.OS !== 'web') {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  }
-                  handleDeleteEntry();
-                }}
+                onPress={handleDeleteEntry}
                 disabled={isLoading}
-                activeOpacity={0.2}
-                hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-                pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }}
-                delayPressIn={0}
-                delayPressOut={0}
+                activeOpacity={0.8}
               >
                 <LinearGradient
                   colors={['#DC2626', '#B91C1C']}
@@ -688,6 +652,47 @@ export default function AddGiveEntryScreen() {
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      {/* Action Buttons - Replace Tab Bar */}
+      <View style={[styles.actionButtonsContainer, { 
+        paddingBottom: Platform.OS === 'android' ? Math.max(insets.bottom + 5, 15) : Math.max(insets.bottom + 10, 25)
+      }]}>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.saveButton]}
+          onPress={handleSaveEntry}
+          activeOpacity={0.8}
+          disabled={isLoading}
+        >
+          <LinearGradient
+            colors={['#10B981', '#059669']}
+            style={styles.actionButtonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Save size={20} color="white" strokeWidth={2.5} />
+            <Text style={styles.actionButtonText}>{isEditMode ? t('update') : t('save')}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {isEditMode && (
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={handleDeleteEntry}
+            activeOpacity={0.8}
+            disabled={isLoading}
+          >
+            <LinearGradient
+              colors={['#EF4444', '#DC2626']}
+              style={styles.actionButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Trash2 size={20} color="white" strokeWidth={2.5} />
+              <Text style={styles.actionButtonText}>{t('delete')}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -695,7 +700,7 @@ export default function AddGiveEntryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#DC2626', // Red theme for give entries
+    backgroundColor: '#059669', // Green theme for receive entries
   },
   content: {
     flex: 1,
@@ -792,7 +797,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#DCFCE7',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -815,7 +820,7 @@ const styles = StyleSheet.create({
   },
   nepaliDateText: {
     fontSize: Platform.OS === 'android' ? 12 : 14,
-    color: '#DC2626',
+    color: '#059669',
     fontWeight: '600',
     marginTop: 2,
   },
@@ -896,7 +901,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     elevation: 4,
-    shadowColor: '#DC2626',
+    shadowColor: '#059669',
     shadowOffset: {
       width: 0,
       height: 4,
@@ -968,7 +973,7 @@ const styles = StyleSheet.create({
   removeEntryButton: {
     padding: 4,
     borderRadius: 8,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#DCFCE7',
   },
   addEntryButton: {
     flexDirection: 'row',
@@ -978,9 +983,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#DC2626',
+    borderColor: '#059669',
     borderStyle: 'dashed',
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#F0FDF4',
   },
   addEntryText: {
     fontSize: Platform.OS === 'android' ? 14 : 16,
@@ -988,4 +993,55 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     letterSpacing: 0.1,
   },
+
+  // Action Buttons Styles - Replace Tab Bar
+  actionButtonsContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF', // White background like home page
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)', // Subtle border for white background
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 8, // Add elevation for Android
+  },
+  actionButton: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  actionButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  actionButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: 'white',
+    letterSpacing: 0.5,
+  },
+  saveButton: {
+    // Additional styles for Save button if needed
+  },
+  deleteButton: {
+    // Additional styles for Delete button if needed
+  },
+
 });

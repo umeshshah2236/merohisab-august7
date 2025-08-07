@@ -213,6 +213,183 @@ function RootLayoutNav() {
         />
 
 
+        {/* Calculator Pages - NO TAB BAR */}
+        <Stack.Screen 
+          name="calculator" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true, // Enable gesture for both platforms
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right', // No animation on Android
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            // CRITICAL: Dark background for calculator page
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+        <Stack.Screen 
+          name="calculator/results" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right',
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+
+        {/* Karobar Pages - NO TAB BAR */}
+        <Stack.Screen 
+          name="karobar" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right',
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+        <Stack.Screen 
+          name="karobar/results" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right',
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+
+        {/* Customer Detail Page - NO TAB BAR */}
+        <Stack.Screen 
+          name="customer-detail" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right',
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+
+        {/* Form Pages - NO TAB BAR */}
+        <Stack.Screen 
+          name="add-loan" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right',
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+        <Stack.Screen 
+          name="add-customer" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right',
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+        <Stack.Screen 
+          name="customer-form" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right',
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+        <Stack.Screen 
+          name="add-receive-entry" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right',
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+        <Stack.Screen 
+          name="add-give-entry" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right',
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+        <Stack.Screen 
+          name="edit-give-entry" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right',
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+        <Stack.Screen 
+          name="edit-receive-entry" 
+          options={{ 
+            headerShown: false, 
+            headerBackVisible: false,
+            gestureEnabled: true,
+            gestureDirection: 'horizontal',
+            animation: Platform.OS === 'android' ? 'none' : 'slide_from_right',
+            animationDuration: Platform.OS === 'android' ? 0 : 300,
+            animationTypeForReplace: 'push',
+            contentStyle: { backgroundColor: '#0F172A' },
+            cardStyle: { backgroundColor: '#0F172A' },
+          }} 
+        />
+
         <Stack.Screen name="privacy-policy" options={{ presentation: 'modal' }} />
         <Stack.Screen name="terms-of-service" options={{ presentation: 'modal' }} />
         <Stack.Screen name="about" options={{ presentation: 'modal' }} />
@@ -314,9 +491,10 @@ export default function RootLayout() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <StatusBar 
-          style="auto" 
-          translucent={false}
+          style="light"
+          translucent={true}
           hidden={false}
+          backgroundColor="transparent"
         />
                         <ThemeProvider>
                   <LanguageProvider>
